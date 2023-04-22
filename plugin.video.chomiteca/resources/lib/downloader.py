@@ -1,4 +1,4 @@
-import urllib2
+import urllib.request
 import xbmc
 import xbmcgui
 import xbmcplugin
@@ -6,11 +6,11 @@ import xbmcaddon
 import xbmcvfs
 import os
 import inspect
-iconpequeno = os.path.join(xbmcaddon.Addon(id='plugin.video.chomiteca').getAddonInfo('path').decode('utf-8'),'resources','art','iconpq.png')
+iconsmall = os.path.join(xbmcaddon.Addon(id='plugin.video.chomiteca').getAddonInfo('path').decode('utf-8'),'resources','art','iconpq.png')
 
 def getResponse(url, size, referer, agent, cookie):
     try:
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
 
         if len(referer) > 0:
             req.add_header('Referer', referer)
@@ -25,7 +25,7 @@ def getResponse(url, size, referer, agent, cookie):
             size = int(size)
             req.add_header('Range',   'bytes=%d-' % size)
 
-        resp = urllib2.urlopen(req, timeout=10)
+        resp = urllib.request.urlopen(req, timeout=10)
         return resp
     except:
         return None
@@ -68,7 +68,7 @@ def doDownload(url, dest, title, referer, agent, cookie):
     #print "Download Header"
     #print resp.headers
     if resumable:
-        print "Download e resumivel"
+        print("Download e resumivel")
 
     if content < 1:
         xbmcgui.Dialog().ok(title, file, 'Tamanho do ficheiro desconhecido.', 'Impossível fazer download.')
@@ -89,7 +89,7 @@ def doDownload(url, dest, title, referer, agent, cookie):
 
     if xbmcgui.Dialog().yesno(title, file, 'Ficheiro completo ocupa %dMB.' % mb, 'Continuar com o download?'): pass
     else: return
-    print 'Download File Size : %dMB %s ' % (mb, dest)
+    print(f'Download File Size : {mb}MB {dest}')
 
     dialogDL=dialogCompatible() #dialog available on gotham++
 
@@ -108,9 +108,9 @@ def doDownload(url, dest, title, referer, agent, cookie):
             downloaded += len(c)
         percent = min(100 * downloaded / content, 100)
         if percent >= notify:
-            if dialogDL==False: xbmc.executebuiltin( "XBMC.Notification(%s,%s,%i,%s)" % ( title + ' - ' + str(percent)+'%', file, 10000,iconpequeno))
+            if dialogDL==False: xbmc.executebuiltin( "XBMC.Notification(%s,%s,%i,%s)" % ( title + ' - ' + str(percent)+'%', file, 10000,iconsmall))
             else: pDialog.update(percent)
-            print 'Download percent : %s %s %dMB downloaded : %sMB File Size : %sMB' % (str(percent)+'%', dest, mb, downloaded / 1000000, content / 1000000)
+            print(f'Download percent : {str(percent)} % {dest} {mb}MB downloaded : {downloaded / 1000000}MB File Size : {content / 1000000}MB')
             notify += 10
 
         if dialogDL==True: pDialog.update(percent)
@@ -131,12 +131,12 @@ def doDownload(url, dest, title, referer, agent, cookie):
                         del c
 
                     f.close()
-                    print '%s download complete' % (dest)
+                    print(f'{dest} download complete')
                     if not xbmc.Player().isPlaying():
                         xbmcgui.Dialog().ok(title, file, '' , 'Download concluído')
                     return
-        except Exception, e:
-            print str(e)
+        except Exception as e:
+            print(str(e))
             error = True
             sleep = 10
             errno = 0
@@ -167,13 +167,13 @@ def doDownload(url, dest, title, referer, agent, cookie):
         if error:
             errors += 1
             count  += 1
-            print '%d Error(s) whilst downloading %s' % (count, dest)
+            print(f'{count} Error(s) whilst downloading {dest}')
             xbmc.sleep(sleep*1000)
 
         if (resumable and errors > 0) or errors >= 10:
             if (not resumable and resume >= 10) or resume >= 100:
                 #Give up!
-                print '%s download canceled - too many error whilst downloading' % (dest)
+                print(f'{dest} download canceled - too many error whilst downloading')
                 xbmcgui.Dialog().ok(title, file, '' , 'Download falhou')
                 return
 
@@ -182,7 +182,7 @@ def doDownload(url, dest, title, referer, agent, cookie):
             if resumable:
                 chunks  = []
                 #create new response
-                print 'Download resumed (%d) %s' % (resume, dest)
+                print(f'Download resumed ({resume}) {dest}')
                 resp = getResponse(url, total, referer, agent, cookie)
             else:
                 #use existing response
@@ -190,11 +190,11 @@ def doDownload(url, dest, title, referer, agent, cookie):
 
 def dialogCompatible():
     json_query = xbmc.executeJSONRPC('{ "jsonrpc": "2.0", "method": "Application.GetProperties", "params": {"properties": ["version", "name"]}, "id": 1 }')
-    json_query = unicode(json_query, 'utf-8', errors='ignore')
+    json_query = str(json_query, 'utf-8', errors='ignore')
     import json
     json_query = json.loads(json_query)
     version_installed = []
-    if json_query.has_key('result') and json_query['result'].has_key('version'):
+    if 'result' in json_query and 'version' in json_query['result']:
         version_installed  = json_query['result']['version']
     if int(version_installed['major']) < 13: return False
     else: return True

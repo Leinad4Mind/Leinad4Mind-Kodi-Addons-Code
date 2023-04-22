@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.image.bancadejornais" name="Banca de Jornais" version="2.1.1" provider-name="enen92/Leinad4Mind">
+<addon id="plugin.image.bancadejornais" name="Banca de Jornais" version="3.0.0" provider-name="enen92/Leinad4Mind">
   <requires>
-    <import addon="xbmc.python" version="2.1.0"/>
+    <import addon="xbmc.python" version="3.0.0" />
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>image</provides>
@@ -12,6 +12,14 @@
     <summary lang="en">See the portuguese newspaper covers on Kodi</summary>
     <description lang="pt">Veja as capas dos principais jornais diariamente no Kodi. As capas são retiradas do site sapo24.</description> 
     <description lang="en">See all the major portuguese newspaper covers on Kodi. All covers are retreived from the website sapo24.</description> 
-    <license>GPL 2.0</license>
+    <license>GPL 3.0</license>
+    <assets>
+      <icon>icon.png</icon>
+      <fanart>fanart.jpg</fanart>
+    </assets>
+    <news>
+      v3.0.0 released Abr 01, 2021:
+      - Kodi 19 Compatibility
+    </news>
   </extension>
 </addon>

@@ -4,7 +4,8 @@
        version="3.0.5" 
        provider-name="AddonBrasil/Leinad4Mind">
   <requires>
-    <import addon="xbmc.python" version="2.1.0"/>
+    <import addon="xbmc.python" version="3.0.0"/>
+    <import addon="script.module.sgmllib3k" version="1.0.0"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="addon.py">
     <provides>video</provides>

@@ -17,13 +17,13 @@ def getsubtitles(name,lang1=None,lang2=None):
 	except: pass
 	langs = ','.join(langs)
 
-	import xmlrpclib
+	import xmlrpc.client
 	counterloop = 0
 	result = []
 	while not result and counterloop <=5 :
 		try:
-			if counterloop <> 0: xbmc.sleep(1000)	
-			server = xmlrpclib.Server('http://api.opensubtitles.org/xml-rpc', verbose=0)
+			if counterloop != 0: xbmc.sleep(1000)	
+			server = xmlrpc.client.Server('http://api.opensubtitles.org/xml-rpc', verbose=0)
 			token = server.LogIn('', '', 'en', 'XBMC_Subtitles_v1')['token']
 			result = server.SearchSubtitles(token, [{'query': name, 'sublanguageid': langs }])['data']
 			result = [i for i in result if i['SubSumCD'] == '1']
@@ -36,14 +36,14 @@ def getsubtitles(name,lang1=None,lang2=None):
 		filter = [i for i in result if lang == i['SubLanguageID']]
 		if filter == []: continue
 		subtitles += [i for i in filter if name.lower() in i['MovieReleaseName'].lower()]
-		if subtitles <> []:
+		if subtitles != []:
 			try: lang = xbmc.convertLanguage(lang, xbmc.ISO_639_1)
 			except: pass
 			break		
 		else:		
-			if moviequality <> []: 
+			if moviequality != []: 
 				for mq in moviequality: subtitles += [i for i in filter if mq in i['MovieReleaseName'].lower()]
-			if subtitles <> []:				
+			if subtitles != []:				
 				try: lang = xbmc.convertLanguage(lang, xbmc.ISO_639_1)
 				except: pass
 				break

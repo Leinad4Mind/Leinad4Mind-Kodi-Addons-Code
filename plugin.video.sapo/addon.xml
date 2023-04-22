@@ -4,7 +4,7 @@
        version="2.0.0"
        provider-name="fightnight/Leinad4Mind">
     <requires>
-        <import addon="xbmc.python" version="2.1.0"/> 
+        <import addon="xbmc.python" version="3.0.0"/> 
 		<import addon="script.module.requests"/>
     </requires>
     <extension point="xbmc.python.pluginsource" library="default.py">
@@ -19,5 +19,13 @@
 		<disclaimer lang="en">Independent and opensource plugin not endorsed by Sapo.</disclaimer>
 		<disclaimer lang="pt">Addon independente e opensource não afiliado com o Sapo.</disclaimer>
         <platform>all</platform>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
+        <news>
+            v2.0.0 released Abr 01, 2021:
+            - Kodi 19 Compatibility
+        </news>
     </extension>
 </addon>

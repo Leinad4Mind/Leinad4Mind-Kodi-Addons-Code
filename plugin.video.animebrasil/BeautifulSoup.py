@@ -85,7 +85,7 @@ __license__ = "New-style BSD"
 
 from sgmllib import SGMLParser, SGMLParseError
 import codecs
-import markupbase
+import _markupbase
 import types
 import re
 import sgmllib
@@ -100,7 +100,7 @@ except NameError:
 
 #These hacks make Beautiful Soup able to parse XML with namespaces
 sgmllib.tagfind = re.compile('[a-zA-Z][-_.:a-zA-Z0-9]*')
-markupbase._declname_match = re.compile(r'[a-zA-Z][-_.:a-zA-Z0-9]*\s*').match
+_markupbase._declname_match = re.compile(r'[a-zA-Z][-_.:a-zA-Z0-9]*\s*').match
 
 DEFAULT_OUTPUT_ENCODING = "utf-8"
 
@@ -446,7 +446,7 @@ class PageElement(object):
         return "&" + self.XML_SPECIAL_CHARS_TO_ENTITIES[x.group(0)[0]] + ";"
 
 
-class NavigableString(unicode, PageElement):
+class NavigableString(str, PageElement):
 
     def __new__(cls, value):
         """Create a new NavigableString.
@@ -456,9 +456,9 @@ class NavigableString(unicode, PageElement):
         passed in to the superclass's __new__ or the superclass won't know
         how to handle non-ASCII characters.
         """
-        if isinstance(value, unicode):
-            return unicode.__new__(cls, value)
-        return unicode.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
+        if isinstance(value, str):
+            return str.__new__(cls, value)
+        return str.__new__(cls, value, DEFAULT_OUTPUT_ENCODING)
 
     def __getnewargs__(self):
         return (NavigableString.__str__(self),)
@@ -470,7 +470,7 @@ class NavigableString(unicode, PageElement):
         if attr == 'string':
             return self
         else:
-            raise AttributeError, "'%s' object has no attribute '%s'" % (self.__class__.__name__, attr)
+            raise AttributeError(f"{self.__class__.__name__} object has no attribute {attr}")
 
     def __unicode__(self):
         return str(self).decode(DEFAULT_OUTPUT_ENCODING)
@@ -555,7 +555,7 @@ class Tag(PageElement):
         self.escapeUnrecognizedEntities = parser.escapeUnrecognizedEntities
 
         # Convert any HTML, XML, or numeric entities in the attribute values.
-        convert = lambda(k, val): (k,
+        convert = lambda k, val: (k,
                                    re.sub("&(#\d+|#x[0-9a-fA-F]+|\w+);",
                                           self._convertEntities,
                                           val))
@@ -664,7 +664,7 @@ class Tag(PageElement):
             return self.find(tag[:-3])
         elif tag.find('__') != 0:
             return self.find(tag)
-        raise AttributeError, "'%s' object has no attribute '%s'" % (self.__class__, tag)
+        raise AttributeError(f"{self.__class__} object has no attribute {tag}")
 
     def __eq__(self, other):
         """Returns true iff this tag has the same name, the same attributes,
@@ -970,8 +970,7 @@ class SoupStrainer:
             if self._matches(markup, self.text):
                 found = markup
         else:
-            raise Exception, "I don't know how to match against a %s" \
-                  % markup.__class__
+            raise Exception(f"I don't know how to match against a {markup.__class__}")
         return found
 
     def _matches(self, markup, matchAgainst):
@@ -987,7 +986,7 @@ class SoupStrainer:
             if isinstance(markup, Tag):
                 markup = markup.name
             if markup and not isinstance(markup, basestring):
-                markup = unicode(markup)
+                markup = str(markup)
             #Now we know that chunk is either a string, or None.
             if hasattr(matchAgainst, 'match'):
                 # It's a regexp object.
@@ -997,8 +996,8 @@ class SoupStrainer:
             elif hasattr(matchAgainst, 'items'):
                 result = markup.has_key(matchAgainst)
             elif matchAgainst and isinstance(markup, basestring):
-                if isinstance(markup, unicode):
-                    matchAgainst = unicode(matchAgainst)
+                if isinstance(markup, str):
+                    matchAgainst = str(matchAgainst)
                 else:
                     matchAgainst = str(matchAgainst)
 
@@ -1162,7 +1161,7 @@ class BeautifulStoneSoup(Tag, SGMLParser):
     def _feed(self, inDocumentEncoding=None, isHTML=False):
         # Convert the document to Unicode.
         markup = self.markup
-        if isinstance(markup, unicode):
+        if isinstance(markup, str):
             if not hasattr(self, 'originalEncoding'):
                 self.originalEncoding = None
         else:
@@ -1824,7 +1823,7 @@ class UnicodeDammit:
                                                       "iso-8859-1",
                                                       "iso-8859-2"):
             markup = re.compile("([\x80-\x9f])").sub \
-                     (lambda(x): self._subMSChar(x.group(1)),
+                     (lambda x: self._subMSChar(x.group(1)),
                       markup)
 
         try:
@@ -1832,7 +1831,7 @@ class UnicodeDammit:
             u = self._toUnicode(markup, proposed)
             self.markup = u
             self.originalEncoding = proposed
-        except Exception, e:
+        except Exception as e:
             # print "That didn't work!"
             # print e
             return None
@@ -2014,4 +2013,4 @@ class UnicodeDammit:
 if __name__ == '__main__':
     import sys
     soup = BeautifulSoup(sys.stdin)
-    print soup.prettify()
+    print(soup.prettify())

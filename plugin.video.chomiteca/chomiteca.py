@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """ Chomiteca
-    2015-2019 fightnight/Mafarricos/Leinad4Mind"""
+    2015-2020 fightnight/Mafarricos/Leinad4Mind"""
 
-import xbmc,xbmcaddon,xbmcgui,xbmcplugin,urllib,urllib2,os,re,sys,datetime,time,xbmcvfs,HTMLParser
-from t0mm0.common.net import Net
-from resources.lib import internalPlayer
+import xbmc,xbmcaddon,xbmcgui,xbmcplugin,urllib.request, urllib.error,os,re,sys,datetime,time,xbmcvfs,html.parser
+from resources.lib import internalPlayer, t0mm0
 
-try: import json
-except: import simplejson as json
-h = HTMLParser.HTMLParser()
+import json
+Net = t0mm0.Net
+h = html.parser.HTMLParser()
 net=Net()
 
 ####################################################### CONSTANTES #####################################################
@@ -28,27 +27,27 @@ mensagemprogresso = xbmcgui.DialogProgress()
 downloadPath = selfAddon.getSetting('download-folder')
 pastaperfil = xbmc.translatePath(selfAddon.getAddonInfo('profile'))
 cookies = os.path.join(pastaperfil, "cookies.lwp")
-username_ck = urllib.quote(selfAddon.getSetting('chomikuj-username'))
-servidor_ut = urllib.quote(selfAddon.getSetting('servidor-cover'))
+username_ck = urllib.parse.quote(selfAddon.getSetting('chomikuj-username'))
+servidor_ut = urllib.parse.quote(selfAddon.getSetting('servidor-cover'))
 moviesFolder = xbmc.translatePath(selfAddon.getSetting('libraryfolder'))
 tvshowFolder = xbmc.translatePath(selfAddon.getSetting('tvshowlibraryfolder'))
 musicvideoFolder = xbmc.translatePath(selfAddon.getSetting('musicvideolibraryfolder'))
 foldertype = int(selfAddon.getSetting('folder-type'))
-usernameURL = urllib.quote(selfAddon.getSetting('chomikuj-username'))
+usernameURL = urllib.parse.quote(selfAddon.getSetting('chomikuj-username'))
 
 #################################################### LOGIN CHOMITECA #####################################################
 def login(defora=False):
-    print "Sem cookie. A iniciar login"
+    print("Sem cookie. A iniciar login")
     username,password,site,label,color = appendValues()
     for x in range(0, len(username)):
         try:
-            print username[x]
+            print(username[x])
             link=abrir_url(site[x])
             token=re.compile('<input name="__RequestVerificationToken" type="hidden" value="(.+?)" />').findall(link)[0]
             form_d = {'RedirectUrl':'','Redirect':'True','FileId':0,'Login':username[x],'Password':password[x],'RememberMe':'true','__RequestVerificationToken':token}
             ref_data = {'Accept': '*/*', 'Content-Type': 'application/x-www-form-urlencoded','Origin': site[x], 'X-Requested-With': 'XMLHttpRequest', 'Referer': site[x],'User-Agent':user_agent}
             endlogin=site[x] + 'action/login/login'
-            try: logintest= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
+            try: logintest= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
             except: logintest='Erro'
         except:
             link='Erro'
@@ -126,30 +125,32 @@ def favoritos():
     username,password,site,label,color = appendValues()
     for x in range(0, len(username)):
         conteudo=abrir_url_cookie(site[x] + username[x])
-        chomikid=re.compile('<input id="FriendsTargetChomikName" name="FriendsTargetChomikName" type="hidden" value="(.+?)" />').findall(conteudo)[0]
-        token=re.compile('<input name="__RequestVerificationToken" type="hidden" value="(.+?)" />').findall(conteudo)[0]
-        if name==traducao(40037):pagina=1
-        else: pagina = re.compile('\[.+?\].+? (\d) .+?').findall(name)[0]
-        form_d = {'page':pagina,'chomikName':chomikid,'__RequestVerificationToken':token}
-        ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':site[x].replace('https://','').replace('/',''),'Origin':site[x],'Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
-        endlogin=site[x] + 'action/Friends/ShowAllFriends'
-        info= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
-        info=info.replace('javascript:;','/javascript:;')
-        users=re.compile('<div class="friend avatar".+?<a href="/(.+?)" title="(.+?)"><img alt=".+?" src="(.+?)" />').findall(info)
-        for urluser,nomeuser,thumbuser in users: addDir(nomeuser,site[x] + urluser,3,thumbuser,len(users),True)
-        paginas(info)
+        chomikid=re.compile('<input id="FriendsTargetChomikName" name="FriendsTargetChomikName" type="hidden" value="(.+?)" />').findall(conteudo)
+        if chomikid:
+            chomikid = chomikid[0]
+            token=re.compile('<input name="__RequestVerificationToken" type="hidden" value="(.+?)" />').findall(conteudo)[0]
+            if name==traducao(40037):pagina=1
+            else: pagina = re.compile('\[.+?\].+? (\d) .+?').findall(name)[0]
+            form_d = {'page':pagina,'chomikName':chomikid,'__RequestVerificationToken':token}
+            ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':site[x].replace('https://','').replace('/',''),'Origin':site[x],'Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
+            endlogin=site[x] + 'action/Friends/ShowAllFriends'
+            info= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
+            info=info.replace('javascript:;','/javascript:;')
+            users=re.compile('<div class="friend avatar".+?<a href="/(.+?)" title="(.+?)"><img alt=".+?" src="(.+?)" />').findall(info)
+            for urluser,nomeuser,thumbuser in users: addDir(nomeuser,site[x] + urluser,3,thumbuser,len(users),True)
+            paginas(info)
     xbmc.executebuiltin("Container.SetViewMode(500)")
     xbmcplugin.setContent(int(sys.argv[1]), 'livetv')
 
 def proxpesquisa_ck():
-    from t0mm0.common.addon import Addon
+    Addon = t0mm0.Addon
     addon=Addon(addon_id)
     form_d=addon.load_data('temp.txt')
     ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':'chomikuj.pl','Origin':'https://chomikuj.pl','Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
     form_d['Page']= form_d['Page'] + 1
     endlogin=MainURL + 'action/SearchFiles/Results'
     net.set_cookies(cookies)
-    conteudo= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
+    conteudo= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
     addon.save_data('temp.txt',form_d)
     pastas(MainURL + 'action/nada','coco',conteudo=conteudo)
 
@@ -163,13 +164,13 @@ def atalhos(type=False):
             builder='{"name":"""%s""","url":"""%s""","type":"folder"}' % (name,url)
             savefile('%s.txt' % ref,builder,pastafinal=pastatracks)
             savefile('ref.tmp',str(ref),pastafinal=pastatracks)
-            xbmc.executebuiltin("XBMC.Notification(Chomiteca,Atalho adicionado,'500000',"+iconpequeno.encode('utf-8')+")")
+            xbmc.executebuiltin("XBMC.Notification(Chomiteca,Atalho adicionado,'500000',"+iconpequeno+")")
       elif type=='addfile':
             ref=int(openfile('ref.tmp',pastafinal=pastatracks)) + 1
             builder='{"name":"""%s""","url":"""%s""","type":"file"}' % (name,url)
             savefile('%s.txt' % ref,builder,pastafinal=pastatracks)
             savefile('ref.tmp',str(ref),pastafinal=pastatracks)
-            xbmc.executebuiltin("XBMC.Notification(Chomiteca,Atalho adicionado,'500000',"+iconpequeno.encode('utf-8')+")")
+            xbmc.executebuiltin("XBMC.Notification(Chomiteca,Atalho adicionado,'500000',"+iconpequeno+")")
       elif type=='remove':
             try:os.remove(os.path.join(pastatracks,name))
             except:pass
@@ -185,7 +186,7 @@ def atalhos(type=False):
                   except:fname=''
                   try:furl=re.compile('"url":"""(.+?)"""').findall(content)[0]
                   except:furl=''
-                  path=urllib.unquote_plus('/'.join(''.join(furl.split(MainURL)).split('/')[:-1]).replace('*','%'))
+                  path=urllib.parse.unquote_plus('/'.join(''.join(furl.split(MainURL)).split('/')[:-1]).replace('*','%'))
                   if ftype=='file': addCont('%s (%s)' % (fname,path),furl,4,'',wtpath + art + 'file.png',len(lista),False,atalhos=atal)
                   elif ftype=='folder': addDir('%s (%s)' % (fname,path),furl,3,wtpath + art + 'pasta.png',len(lista),True,atalhos=atal)
                   xbmc.executebuiltin("Container.SetViewMode(51)")
@@ -202,7 +203,7 @@ def pastas(url,name,formcont={},conteudo='',past=False,deFora=False,listagem=Fal
     if re.search('action/SearchFiles',url):
         ref_data = {'Host': host, 'Connection': 'keep-alive', 'Referer': 'https://'+host+'/','Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8','User-Agent':user_agent,'Referer': 'https://'+host+'/'}
         endlogin=sitebase + 'action/SearchFiles'
-        conteudo= net.http_POST(endlogin,form_data=formcont,headers=ref_data).content.encode('utf-8','ignore')
+        conteudo= net.http_POST(endlogin,form_data=formcont,headers=ref_data).content
         if re.search('O ficheiro n&#227;o foi encontrado',conteudo): mensagemok(host,'Sem resultados.')
         try:
               filename=re.compile('<input name="FileName" type="hidden" value="(.+?)" />').findall(conteudo)[0]
@@ -212,18 +213,18 @@ def pastas(url,name,formcont={},conteudo='',past=False,deFora=False,listagem=Fal
               token=re.compile('<input name="__RequestVerificationToken" type="hidden" value="(.+?)"').findall(conteudo)[0]
               if selfAddon.getSetting('activate-size') == 'true': form_d = {'IsGallery':'False','FileName':filename,'FileType':ftype,'ShowAdultContent':'True','Page':pagina,'__RequestVerificationToken':token,'SizeFrom':selfAddon.getSetting('min-size'),'SizeTo':selfAddon.getSetting('max-size')}
               else: form_d = {'IsGallery':'False','FileName':filename,'FileType':ftype,'ShowAdultContent':'True','Page':pagina,'__RequestVerificationToken':token}
-              from t0mm0.common.addon import Addon
+              Addon = t0mm0.Addon
               addon=Addon(addon_id)
               addon.save_data('temp.txt',form_d)
               ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':host,'Origin':'https://'+host,'Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
               endlogin=sitebase + 'action/SearchFiles/Results'
-              conteudo= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
+              conteudo= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
         except: pass
     else:
         if conteudo=='':
               extra=returnExtra()
               conteudo=clean(abrir_url_cookie(url + extra))
-              print conteudo
+              print(conteudo)
     if re.search('ProtectedFolderChomikLogin',conteudo):
         chomikid=re.compile('<input id="ChomikId" name="ChomikId" type="hidden" value="(.+?)" />').findall(conteudo)[0]
         folderid=re.compile('<input id="FolderId" name="FolderId" type="hidden" value="(.+?)" />').findall(conteudo)[0]
@@ -233,8 +234,8 @@ def pastas(url,name,formcont={},conteudo='',past=False,deFora=False,listagem=Fal
         form_d = {'ChomikId':chomikid,'FolderId':folderid,'FolderName':foldername,'Password':passwordfolder,'Remember':'true','__RequestVerificationToken':token}
         ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':host,'Origin':'https://' + host,'Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
         endlogin=sitebase + 'action/Files/LoginToFolder'
-        teste= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
-        teste=urllib.unquote(teste)
+        teste= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
+        teste=urllib.parse.unquote(teste)
         if re.search('IsSuccess":false',teste):
               mensagemok('Erro',traducao(40002))
               sys.exit(0)
@@ -249,8 +250,8 @@ def pastas(url,name,formcont={},conteudo='',past=False,deFora=False,listagem=Fal
         form_d = {'Password':passwordfolder,'OK':'OK','RemeberMe':'true','IsAdult':isadult,'Sex':sex,'AccountName':accname,'AdultFilter':adultfilter,'ChomikType':chomiktype,'TargetChomikId':chomikid}
         ref_data = {'Accept':'*/*','Content-Type':'application/x-www-form-urlencoded','Host':host,'Origin':'https://'+host,'Referer':url,'User-Agent':user_agent,'X-Requested-With':'XMLHttpRequest'}
         endlogin=sitebase + 'action/UserAccess/LoginToProtectedWindow'
-        teste= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
-        teste=urllib.unquote(teste)
+        teste= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
+        teste=urllib.parse.unquote(teste)
         if re.search('<div class="ui-tooltip-titlebar">',teste): mensagemok('Chomikuj',traducao(40002))
         else: pastas_ref(url)
     else:
@@ -387,6 +388,7 @@ def GetThumbExt(extensao):
     elif extensao=='.mp4': return wtpath + art + 'video.png'
     elif extensao=='.m4v': return wtpath + art + 'video.png'
     elif extensao=='.3gp': return wtpath + art + 'video.png'
+    elif extensao=='.m2ts': return wtpath + art + 'video.png'
     elif extensao=='.rm': return wtpath + art + 'video/rm.png'
     elif extensao=='.rmvb': return wtpath + art + 'video/rm.png'
     elif extensao=='.wmv': return wtpath + art + 'video/wmv.png'
@@ -402,99 +404,95 @@ def GetThumbExt(extensao):
 def ReturnConteudo(conteudo,past,color,url2,deFora):
     diffItems = False
     reslist = []
-    section = re.compile('<div class="filerow fileItemContainer">.+?<a class="expanderHeader downloadAction"(.+?)</ul></div>\s+</div>', re.DOTALL).findall(conteudo)
-    if not section: section = re.compile('fileItemContainer">(.+?)</div></div>', re.DOTALL).findall(conteudo)
-    if not section: section = re.compile('<li class="fileItemContainer">(.+?)<li><span class="date">', re.DOTALL).findall(conteudo)
+    section = re.compile('\sfileItemContainer">.+?<a class="expanderHeader downloadAction"(.+?)</ul></div>\s+</div>', re.DOTALL).findall(conteudo)
+    if not section: section = re.compile('\sfileItemContainer">(.+?)</h3>\s+</div>', re.DOTALL).findall(conteudo)
+    if not section: section = re.compile('\sfileItemContainer">(.+?)<li><span class="date">', re.DOTALL).findall(conteudo)
     for part in section:
-        if color=="green": name = re.compile('data-title="(.+?)"', re.DOTALL).findall(part)
-        if color=="blue": name = re.compile('title="(.+?)"', re.DOTALL).findall(part)
-        if not name: name = re.compile('<span class="bold">(.+?)</span>.{4}\s+</a>', re.DOTALL).findall(part)
+        name = re.compile('data-title="(.+?)"', re.DOTALL).findall(part)
+        if not name: name = re.compile('<span class="bold">(.+?)</span>\..+?\s+</a>\s+<img', re.DOTALL).findall(part)
         # tituloficheiro = ReplaceSpecialChar(h.unescape(name[0].decode('utf-8').replace('<span class="e">','').replace(' </span>','')))
-        tituloficheiro = h.unescape(name[0].replace('<span class="e">','').replace(' </span>',''))
+        if name:
+            tituloficheiro = h.unescape(name[0].replace('<span class="e">','').replace(' </span>',''))
 
-        if(
-            ('.7z' in tituloficheiro[-3:]) or ('.ra' in tituloficheiro[-3:]) or ('.rm' in tituloficheiro[-3:])
-            ): extensao = tituloficheiro[-3:]
-        if(
-            ('.ace' in tituloficheiro[-4:]) or ('.hqx' in tituloficheiro[-4:]) or ('.jar' in tituloficheiro[-4:]) or ('.rar' in tituloficheiro[-4:]) or ('.sit' in tituloficheiro[-4:]) or ('.tar' in tituloficheiro[-4:]) or ('.zip' in tituloficheiro[-4:]) or 
-            ('.aac' in tituloficheiro[-4:]) or ('.m4a' in tituloficheiro[-4:]) or ('.mp3' in tituloficheiro[-4:]) or ('.ogg' in tituloficheiro[-4:]) or ('.wav' in tituloficheiro[-4:]) or ('.wma' in tituloficheiro[-4:]) or ('.ac3' in tituloficheiro[-4:]) or ('.m3u' in tituloficheiro[-4:]) or 
-            ('.bmp' in tituloficheiro[-4:]) or ('.gif' in tituloficheiro[-4:]) or ('.ico' in tituloficheiro[-4:]) or ('.jpg' in tituloficheiro[-4:]) or ('.png' in tituloficheiro[-4:]) or ('.tga' in tituloficheiro[-4:]) or ('.tif' in tituloficheiro[-4:]) or 
-            ('.bin' in tituloficheiro[-4:]) or ('.ccd' in tituloficheiro[-4:]) or ('.cue' in tituloficheiro[-4:]) or ('.img' in tituloficheiro[-4:]) or ('.iso' in tituloficheiro[-4:]) or ('.mdf' in tituloficheiro[-4:]) or ('.mds' in tituloficheiro[-4:]) or 
-            ('.dat' in tituloficheiro[-4:]) or ('.ifo' in tituloficheiro[-4:]) or ('.mpg' in tituloficheiro[-4:]) or ('.3gp' in tituloficheiro[-4:])or 
-            ('.doc' in tituloficheiro[-4:]) or ('.pdf' in tituloficheiro[-4:]) or ('.ppt' in tituloficheiro[-4:]) or ('.rtf' in tituloficheiro[-4:]) or ('.txt' in tituloficheiro[-4:])
-            ): extensao = tituloficheiro[-4:]
-        if(
-            ('.sitx' in tituloficheiro[-5:]) or ('.aiff' in tituloficheiro[-5:]) or ('.midi' in tituloficheiro[-5:]) or ('.rmva' in tituloficheiro[-5:]) or ('.flac' in tituloficheiro[-5:]) or ('.jpeg' in tituloficheiro[-5:]) or ('.tiff' in tituloficheiro[-5:]) or ('.webp' in tituloficheiro[-5:]) or ('.mpeg' in tituloficheiro[-5:]) or ('.rmva' in tituloficheiro[-5:])
-            ): extensao = tituloficheiro[-5:]
-        if(
-            ('.torrent' in tituloficheiro[-8:])
-            ): extensao = tituloficheiro[-8:]
-        if(
-            ('.avi' in tituloficheiro[-4:]) or ('.mov' in tituloficheiro[-4:]) or ('.mkv' in tituloficheiro[-4:]) or ('.ogm' in tituloficheiro[-4:]) or ('.mp4' in tituloficheiro[-4:]) or ('.wmv' in tituloficheiro[-4:]) or ('.m4v' in tituloficheiro[-4:])
-            ): extensao = tituloficheiro[-4:]
-        else:
-            if color=="green":
+            if(
+                ('.7z' in tituloficheiro[-3:]) or ('.ra' in tituloficheiro[-3:]) or ('.rm' in tituloficheiro[-3:])
+                ): extensao = tituloficheiro[-3:]
+            if(
+                ('.ace' in tituloficheiro[-4:]) or ('.hqx' in tituloficheiro[-4:]) or ('.jar' in tituloficheiro[-4:]) or ('.rar' in tituloficheiro[-4:]) or ('.sit' in tituloficheiro[-4:]) or ('.tar' in tituloficheiro[-4:]) or ('.zip' in tituloficheiro[-4:]) or 
+                ('.aac' in tituloficheiro[-4:]) or ('.m4a' in tituloficheiro[-4:]) or ('.mp3' in tituloficheiro[-4:]) or ('.ogg' in tituloficheiro[-4:]) or ('.wav' in tituloficheiro[-4:]) or ('.wma' in tituloficheiro[-4:]) or ('.ac3' in tituloficheiro[-4:]) or ('.m3u' in tituloficheiro[-4:]) or 
+                ('.bmp' in tituloficheiro[-4:]) or ('.gif' in tituloficheiro[-4:]) or ('.ico' in tituloficheiro[-4:]) or ('.jpg' in tituloficheiro[-4:]) or ('.png' in tituloficheiro[-4:]) or ('.tga' in tituloficheiro[-4:]) or ('.tif' in tituloficheiro[-4:]) or 
+                ('.bin' in tituloficheiro[-4:]) or ('.ccd' in tituloficheiro[-4:]) or ('.cue' in tituloficheiro[-4:]) or ('.img' in tituloficheiro[-4:]) or ('.iso' in tituloficheiro[-4:]) or ('.mdf' in tituloficheiro[-4:]) or ('.mds' in tituloficheiro[-4:]) or 
+                ('.dat' in tituloficheiro[-4:]) or ('.ifo' in tituloficheiro[-4:]) or ('.mpg' in tituloficheiro[-4:]) or ('.3gp' in tituloficheiro[-4:])or 
+                ('.doc' in tituloficheiro[-4:]) or ('.pdf' in tituloficheiro[-4:]) or ('.ppt' in tituloficheiro[-4:]) or ('.rtf' in tituloficheiro[-4:]) or ('.txt' in tituloficheiro[-4:])
+                ): extensao = tituloficheiro[-4:]
+            if(
+                ('.sitx' in tituloficheiro[-5:]) or ('.aiff' in tituloficheiro[-5:]) or ('.midi' in tituloficheiro[-5:]) or ('.rmva' in tituloficheiro[-5:]) or ('.flac' in tituloficheiro[-5:]) or ('.jpeg' in tituloficheiro[-5:]) or ('.tiff' in tituloficheiro[-5:]) or ('.webp' in tituloficheiro[-5:]) or ('.mpeg' in tituloficheiro[-5:]) or ('.m2ts' in tituloficheiro[-5:]) or ('.rmva' in tituloficheiro[-5:])
+                ): extensao = tituloficheiro[-5:]
+            if(
+                ('.torrent' in tituloficheiro[-8:])
+                ): extensao = tituloficheiro[-8:]
+            if(
+                ('.avi' in tituloficheiro[-4:]) or ('.mov' in tituloficheiro[-4:]) or ('.mkv' in tituloficheiro[-4:]) or ('.ogm' in tituloficheiro[-4:]) or ('.mp4' in tituloficheiro[-4:]) or ('.m4v' in tituloficheiro[-4:]) or ('.wmv' in tituloficheiro[-4:])
+                ): extensao = tituloficheiro[-4:]
+            else:
                 ext = re.compile('<span class="bold">.+?</span>(\..+?)\s+</a>\s+<img', re.DOTALL).findall(part)
                 if ext: extensao = ext[0]
-            if color=="blue":
-                ext = re.compile('<span class="bold">.+?</span>(\..+?)\s+</a>\s+</h3>', re.DOTALL).findall(part)
-                if ext: extensao = ext[0]
-            if not ext: extensao = '.not'
+                if not ext: extensao = '.not'
 
-        if ( (selfAddon.getSetting('caminho-enable') == 'true') ):
-            imagem = (wtpath + covers + tituloficheiro + '.png')
-            online = str(xbmcvfs.exists(imagem))
-            if (online == '1'):
-                existe='true'
+            if ( (selfAddon.getSetting('caminho-enable') == 'true') ):
+                imagem = (wtpath + covers + tituloficheiro + '.png')
+                online = str(xbmcvfs.exists(imagem))
+                if (online == '1'):
+                    existe='true'
+                else:
+                    existe='false'
+                    online='404'
             else:
                 existe='false'
-                online='404'
-        else:
-            existe='false'
 
-        if (existe == 'false'):
-            if ( (selfAddon.getSetting('servidor-enable') == 'true') and servidor_ut ):
-                imagem = 'https://' + servidor_ut + tituloficheiro + '.png'
-                online = str(urllib.urlopen(imagem).getcode())
-            else: online='404'
+            if (existe == 'false'):
+                if ( (selfAddon.getSetting('servidor-enable') == 'true') and servidor_ut ):
+                    imagem = 'https://' + servidor_ut + tituloficheiro + '.png'
+                    online = str(urllib.request.urlopen(imagem).getcode())
+                else: online='404'
 
-        if ( (extensao == '.mkv') or (extensao == '.mp4') or (extensao == '.avi') or (extensao == '.ogm') ):
-            if (online != '404'): thumb = imagem
+            if ( (extensao == '.mkv') or (extensao == '.mp4') or (extensao == '.m4v') or (extensao == '.ogm') or (extensao == '.avi') or (extensao == '.wmv') or (extensao == '.m2ts') ):
+                if (online != '404'): thumb = imagem
+                else: thumb = GetThumbExt(extensao)
             else: thumb = GetThumbExt(extensao)
-        else: thumb = GetThumbExt(extensao)
 
-        url = re.compile('href="/(.+?)"', re.DOTALL).findall(part)
-        size = re.compile('<li><span>(.+?)</span></li>', re.DOTALL).findall(part)
-        if not size: size = re.compile('<li>\s+(.+?)\s+</li>', re.DOTALL).findall(part)
-        if not size: size = '0'
-        urlficheiro = url[0]
+            url = re.compile('href="/(.+?)"', re.DOTALL).findall(part)
+            size = re.compile('<li><span>(.+?)</span></li>', re.DOTALL).findall(part)
+            if not size: size = re.compile('<li>\s+(.+?)\s+</li>', re.DOTALL).findall(part)
+            if not size: size = '0'
+            urlficheiro = url[0]
 
-        try: tamanhoficheiro = size[0]
-        except: tamanhoficheiro = '0'
-        tamanhoficheiro=tamanhoficheiro.replace(',','.').replace(' ','')
-        num_format = re.compile("^[0-9]+.?[0-9]+?K?M?G?B")
+            try: tamanhoficheiro = size[0]
+            except: tamanhoficheiro = '0'
+            tamanhoficheiro=tamanhoficheiro.replace(',','.').replace(' ','')
+            num_format = re.compile("^[0-9]+.?[0-9]+?K?M?G?B")
 
-        if(selfAddon.getSetting('imagens-disable') == 'true'):
-            if( (extensao == '.bmp') or (extensao == '.gif') or (extensao == '.ico') or (extensao == '.jpg') or (extensao == '.png') or (extensao == '.tga') or (extensao == '.tif') or (extensao == '.tiff') or (extensao == '.webp') ):
-                tamanhoficheiro='0'
+            if(selfAddon.getSetting('imagens-disable') == 'true'):
+                if( (extensao == '.bmp') or (extensao == '.gif') or (extensao == '.ico') or (extensao == '.jpg') or (extensao == '.png') or (extensao == '.tga') or (extensao == '.tif') or (extensao == '.tiff') or (extensao == '.webp') ):
+                    tamanhoficheiro='0'
 
-        if(selfAddon.getSetting('legendas-disable') == 'true'):
-            if( (extensao == '.srt') or (extensao == '.sub') or (extensao == '.ass') or (extensao == '.ssa') ):
-                tamanhoficheiro='0'
+            if(selfAddon.getSetting('legendas-disable') == 'true'):
+                if( (extensao == '.srt') or (extensao == '.sub') or (extensao == '.ass') or (extensao == '.ssa') ):
+                    tamanhoficheiro='0'
 
-        if( tamanhoficheiro != '0' and re.match(num_format,tamanhoficheiro) ):
-            tamanhoparavariavel=' (' + tamanhoficheiro + ')'
-            if deFora: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
-            elif foldertype == 1 and re.search('action/SearchFiles',url2): reslist = SearchResultsFora(tamanhoficheiro,tituloficheiro+extensao+tamanhoparavariavel,MainURL + urlficheiro,color,reslist)
-            else: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
+            if( tamanhoficheiro != '0' and re.match(num_format,tamanhoficheiro) ):
+                tamanhoparavariavel=' (' + tamanhoficheiro + ')'
+                if deFora: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
+                elif foldertype == 1 and re.search('action/SearchFiles',url2): reslist = SearchResultsFora(tamanhoficheiro,tituloficheiro+extensao+tamanhoparavariavel,MainURL + urlficheiro,color,reslist)
+                else: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
 
-        elif re.match(num_format,tamanhoficheiro):
-            xbmc.executebuiltin("XBMC.Notification(Chomiteca,"+tamanhoficheiro+",'500000',"+iconpequeno.encode('utf-8')+")")
-            tamanhoficheiro = '0'
-            tamanhoparavariavel=' (' + tamanhoficheiro + ')'
-            if deFora: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
-            elif foldertype == 1 and re.search('action/SearchFiles',url2): reslist = SearchResultsFora(tamanhoficheiro,tituloficheiro+extensao+tamanhoparavariavel,MainURL + urlficheiro,color,reslist)
-            else: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
+            elif re.match(num_format,tamanhoficheiro):
+                xbmc.executebuiltin("XBMC.Notification(Chomiteca,"+tamanhoficheiro+",'500000',"+iconpequeno+")")
+                tamanhoficheiro = '0'
+                tamanhoparavariavel=' (' + tamanhoficheiro + ')'
+                if deFora: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
+                elif foldertype == 1 and re.search('action/SearchFiles',url2): reslist = SearchResultsFora(tamanhoficheiro,tituloficheiro+extensao+tamanhoparavariavel,MainURL + urlficheiro,color,reslist)
+                else: reslist = SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,4,thumb,reslist)
     return reslist
 
 def SearchResults(tamanhoficheiro,color,tituloficheiro,extensao,tamanhoparavariavel,urlficheiro,modo,thumb,reslist):
@@ -544,7 +542,7 @@ def trailer(name):
     youtube_trailer_search = 'https://www.googleapis.com/youtube/v3/search?part=id,snippet&q=%s-Trailer&maxResults=1&key=AIzaSyCgpWUrGw2mySqmxxzlrsUoNhpGCBVJD7s'
     cleanname=re.compile('COLOR .+?\](.+?)\[/COLOR').findall(name)
     if cleanname: name = cleanname[0][:-4]
-    ytpage = abrir_url(youtube_trailer_search % (urllib.quote_plus(name)))
+    ytpage = abrir_url(youtube_trailer_search % (urllib.parse.quote_plus(name)))
     youtubeid = re.compile('"videoId": "(.+?)"').findall(ytpage)
     url = 'plugin://plugin.video.youtube/play/?video_id=%s' % youtubeid[0]
     if url == None: return
@@ -586,7 +584,7 @@ def returnValues(link):
 def obterlistadeficheiros():
             string=[]
             nrdepaginas=71
-            for i in xrange(1,int(nrdepaginas)+1):
+            for i in range(1,int(nrdepaginas)+1):
                   url='https://minhateca.com.br/qqcoisa,%s' % i
                   extra='?requestedFolderMode=filesList&fileListSortType=Name&fileListAscending=True'
                   conteudo=clean(abrir_url_cookie(url + extra))
@@ -599,7 +597,6 @@ def obterlistadeficheiros():
                               conteudo=clean(conteudo)
                               items3=re.compile('<li class="fileItemContainer">.+?<span class="bold">.+?</span>(.+?)</a>.+?<div class="thumbnail">.+?<a href="(.+?)".+?title="(.+?)">\s+<img.+?<div class="smallTab">.+?<li>(.+?)</li>.+?<span class="date">(.+?)</span>').findall(conteudo)
                               for extensao,urlficheiro,tituloficheiro,tamanhoficheiro,dataficheiro in items3: string.append(tituloficheiro)
-            print string
 
 def pastas_ref(url):
       pastas(url,name)
@@ -615,10 +612,7 @@ def paginas(link):
                     conteudo=re.compile('<div class="paginator clear friendspager">(.+?)<div class="clear">').findall(link)[0]
                     idmode=9
         try:
-              if(color=='blue'):
-                pagina=re.compile('anterior.+?<a href="/(.+?)" class="right" rel="(.+?)"').findall(conteudo)[0]
-              else:
-                pagina=re.compile('poprzednia.+?<a href="/(.+?)" class="right" rel="(.+?)"').findall(conteudo)[0]
+              pagina=re.compile('poprzednia.+?<a href="/(.+?)" class="right" rel="(.+?)"').findall(conteudo)[0]
               urlpag=pagina[0]
               urlpag=urlpag.replace(' ','+')
               addDir('[COLOR gold]' + traducao(40062) + pagina[1] + '[/COLOR] - [COLOR '+color+']' + nextname + '[/COLOR]',sitebase + urlpag,idmode,wtpath + art + 'page.png',1,True)
@@ -647,7 +641,7 @@ def analyzer(url,subtitles='',playterm=False,playlistTitle='',returning=False):
         ref_data = {'Accept': '*/*', 'Content-Type': 'application/x-www-form-urlencoded','Origin': 'https://' + host, 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://'+host+'/','User-Agent':user_agent}
         endlogin=sitebase + 'action/License/Download'
         while final == '' and countloop <= 3:
-            try: final= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
+            try: final= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
             except: pass
             countloop = countloop + 1
         final=final.replace('\u0026','&').replace('\u003c','<').replace('\u003e','>').replace('\\','')
@@ -660,7 +654,7 @@ def analyzer(url,subtitles='',playterm=False,playlistTitle='',returning=False):
               form_d = {'fileId':fileid,'orgFile':orgfile,'userSelection':userselection,'__RequestVerificationToken':token}
               ref_data = {'Accept': '*/*', 'Content-Type': 'application/x-www-form-urlencoded','Origin': 'https://' + sitebase, 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://'+sitebase+'/','User-Agent':user_agent}
               endlogin=sitebase + 'action/License/acceptLargeTransfer'
-              final= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content.encode('utf-8','ignore')
+              final= net.http_POST(endlogin,form_data=form_d,headers=ref_data).content
     except: pass
     try:
         if re.search('causar problemas com o uso de aceleradores de download',final):linkfinal=re.compile('a href=\"(.+?)\"').findall(final)[0]
@@ -673,8 +667,8 @@ def analyzer(url,subtitles='',playterm=False,playlistTitle='',returning=False):
                     return
               else:
                     mensagemok(sitename,traducao(40027))
-                    print str(final)
-                    print str(linkfinal)
+                    print(str(final))
+                    print(str(linkfinal))
                     return
         else: return
     if playlistTitle == '': mensagemprogresso.close()
@@ -692,16 +686,16 @@ def analyzer(url,subtitles='',playterm=False,playlistTitle='',returning=False):
         if playterm=="download":fazerdownload(extfic,linkfinal)
         else:fazerdownload(extfic,linkfinal,tipo="fotos")
         xbmc.executebuiltin("SlideShow("+pastaperfil+")")
-    elif re.search('.mkv',url) or re.search('.ogm',url) or re.search('.avi',url) or re.search('.wmv',url) or re.search('.mp4',url) or re.search('.mpg',url) or re.search('.mpeg',url):
+    elif re.search('.mkv',url) or re.search('.ogm',url) or re.search('.avi',url) or re.search('.wmv',url) or re.search('.mp4',url) or re.search('.m4v',url) or re.search('.mpg',url) or re.search('.mpeg',url) or re.search('.m2ts',url):
         endereco=legendas(fileid,url)
-        if playlistTitle <> '': comecarvideo(playlistTitle,linkfinal,playterm=playterm,legendas=endereco)
+        if playlistTitle != '': comecarvideo(playlistTitle,linkfinal,playterm=playterm,legendas=endereco)
         else: comecarvideo(name,linkfinal,playterm=playterm,legendas=endereco)
     elif re.search('.mp3',url) or re.search('.aac',url) or re.search('.m4a',url) or re.search('.ac3',url) or re.search('.wma',url):
-        if playlistTitle <> '': comecarvideo(playlistTitle,linkfinal,playterm=playterm)
+        if playlistTitle != '': comecarvideo(playlistTitle,linkfinal,playterm=playterm)
         else: comecarvideo(name,linkfinal,playterm=playterm)
     else:
-        if selfAddon.getSetting('aviso-extensao') == 'true': mensagemok(sitename,traducao(40028),traducao(40029),traducao(40030))
-        if playlistTitle <> '': comecarvideo(playlistTitle,linkfinal,playterm=playterm)
+        if selfAddon.getSetting('aviso-extensao') == 'true': mensagemok(sitename,traducao(40028),traducao(40029) + traducao(40030))
+        if playlistTitle != '': comecarvideo(playlistTitle,linkfinal,playterm=playterm)
         else: comecarvideo(name,linkfinal,playterm=playterm)
 
 def comecarvideo(name,url,playterm,legendas=None):
@@ -726,39 +720,39 @@ def comecarvideo(name,url,playterm,legendas=None):
         title='%s' % (name.split('[/B]')[0].replace('[B]',''))
 
         try:
-            print "Testing Movie"
+            print("Testing Movie")
             modtitle = title.replace (" ", "+")+".strm"
             modtitle = modtitle.replace ("(", "%28")
             modtitle = modtitle.replace (")", "%29")
             meta = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"filter": {"field": "path", "operator": "contains", "value": "%s"}, "properties" : ["title", "originaltitle", "year", "genre", "studio", "country", "runtime", "rating", "votes", "mpaa", "director", "writer", "plot", "plotoutline", "tagline", "thumbnail", "file"]}, "id": 1}' % title)
-            print str(meta)
+            print(str(meta))
 
-            meta = unicode(meta, 'utf-8', errors='ignore')
+            meta = str(meta, 'utf-8', errors='ignore')
             meta = json.loads(meta)['result']['movies']
             selfmeta = [i for i in meta if i['file'].endswith(modtitle)][0]
-            meta = {'title': selfmeta['title'].encode('utf-8'), 'originaltitle': selfmeta['originaltitle'].encode('utf-8'), 'year': selfmeta['year'], 'genre': str(" / ".join(selfmeta['genre']).encode('utf-8')), 'studio' : str(" / ".join(selfmeta['studio']).encode('utf-8')), 'country' : str(" / ".join(selfmeta['country']).encode('utf-8')), 'duration' : selfmeta['runtime'], 'rating': selfmeta['rating'], 'votes': selfmeta['votes'], 'mpaa': selfmeta['mpaa'].encode('utf-8'), 'director': str(" / ".join(selfmeta['director']).encode('utf-8')), 'writer': str(" / ".join(selfmeta['writer']).encode('utf-8')), 'plot': selfmeta['plot'].encode('utf-8'), 'plotoutline': selfmeta['plotoutline'].encode('utf-8'), 'tagline': selfmeta['tagline'].encode('utf-8')}
+            meta = {'title': selfmeta['title'], 'originaltitle': selfmeta['originaltitle'], 'year': selfmeta['year'], 'genre': str(" / ".join(selfmeta['genre'])), 'studio' : str(" / ".join(selfmeta['studio'])), 'country' : str(" / ".join(selfmeta['country'])), 'duration' : selfmeta['runtime'], 'rating': selfmeta['rating'], 'votes': selfmeta['votes'], 'mpaa': selfmeta['mpaa'], 'director': str(" / ".join(selfmeta['director'])), 'writer': str(" / ".join(selfmeta['writer'])), 'plot': selfmeta['plot'], 'plotoutline': selfmeta['plotoutline'], 'tagline': selfmeta['tagline']}
 
             dbid = selfmeta['movieid']
             thumb = selfmeta['thumbnail']
             content='Movie'
         except:
             try:
-                print "Testing TV"
+                print("Testing TV")
                 modtitle = title.replace (" ", "+")+".strm"
                 season, episode = re.compile('.+?S(..)E(..)').findall(title)[0]
                 season, episode = '%01d' % int(season), '%01d' % int(episode)
                 meta = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"filter":{"and": [{"field": "season", "operator": "is", "value": "%s"}, {"field": "episode", "operator": "is", "value": "%s"}]}, "properties": ["title", "season", "episode", "showtitle", "firstaired", "runtime", "rating", "director", "writer", "plot", "thumbnail", "file"]}, "id": 1}' % (int(season), int(episode)))
-                print str(meta)
+                print(str(meta))
 
-                meta = unicode(meta, 'utf-8', errors='ignore')
+                meta = str(meta, 'utf-8', errors='ignore')
                 meta = json.loads(meta)['result']['episodes']
                 selfmeta = [i for i in meta if i['file'].endswith(modtitle)][0]
-                meta = {'title': selfmeta['title'].encode('utf-8'), 'season' : selfmeta['season'], 'episode': selfmeta['episode'], 'tvshowtitle': selfmeta['showtitle'].encode('utf-8'), 'premiered' : selfmeta['firstaired'], 'duration' : selfmeta['runtime'], 'rating': selfmeta['rating'], 'director': str(" / ".join(selfmeta['director']).encode('utf-8')), 'writer': str(" / ".join(selfmeta['writer']).encode('utf-8')), 'plot': selfmeta['plot'].encode('utf-8')}
+                meta = {'title': selfmeta['title'], 'season' : selfmeta['season'], 'episode': selfmeta['episode'], 'tvshowtitle': selfmeta['showtitle'], 'premiered' : selfmeta['firstaired'], 'duration' : selfmeta['runtime'], 'rating': selfmeta['rating'], 'director': str(" / ".join(selfmeta['director'])), 'writer': str(" / ".join(selfmeta['writer'])), 'plot': selfmeta['plot']}
 
                 dbid = selfmeta['episodeid']
                 thumb = selfmeta['thumbnail']
                 poster = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"filter": {"field": "title", "operator": "is", "value": "%s"}, "properties": ["thumbnail"]}, "id": 1}' % selfmeta['showtitle'])
-                poster = unicode(poster, 'utf-8', errors='ignore')
+                poster = str(poster, 'utf-8', errors='ignore')
                 poster = json.loads(poster)['result']['tvshows'][0]['thumbnail']
                #thumb = poster     # Uncomment to switch to TV Show Poster Instead of Episode Thumb
                 content='TV'
@@ -767,21 +761,23 @@ def comecarvideo(name,url,playterm,legendas=None):
                 content=''
                 thumb=''
                 dbid=''
-        listitem = xbmcgui.ListItem(title, iconImage="DefaultVideo.png", thumbnailImage=thumb)
+        listitem = xbmcgui.ListItem(title)
+        liz.setArt({"icon": "DefaultImage.png", "thumb": thumb})
         listitem.setInfo(type="Video", infoLabels = meta)
 
     else:
-        listitem = xbmcgui.ListItem(title, iconImage="DefaultVideo.png", thumbnailImage="DefaultVideo.png")
+        listitem = xbmcgui.ListItem(title)
+        liz.setArt({"icon": "DefaultImage.png", "thumb": "DefaultVideo.png"})
         listitem.setInfo("Video", {"title":title})
         listitem.setInfo("Music", {"title":title})
     listitem.setProperty('mimetype', 'video/x-msvideo')
     listitem.setProperty('IsPlayable', 'true')
     xbmcplugin.setResolvedUrl(int(sys.argv[1]), True, listitem)
-    if playterm <> 'playlist':
+    if playterm != 'playlist':
         dialogWait = xbmcgui.DialogProgress()
         dialogWait.create('Video', 'A carregar...')
     playlist.add(url, listitem)
-    if playterm <> 'playlist':
+    if playterm != 'playlist':
         dialogWait.close()
         del dialogWait
     xbmcPlayer = internalPlayer.Player(title=title,dbid=dbid,content=content)
@@ -791,13 +787,13 @@ def comecarvideo(name,url,playterm,legendas=None):
         if selfAddon.getSetting("subtitles") == 'true':
             try: totalTime = xbmcPlayer.getTotalTime()
             except: totalTime = 0
-            print '##totaltime',totalTime
+            print('##totaltime',totalTime)
             if totalTime >= int(selfAddon.getSetting("minsize"))*60:
-                print '#pesquisar legendas'
+                print('#pesquisar legendas')
                 from resources.lib import subtitles
                 try: legendas = subtitles.getsubtitles(name,selfAddon.getSetting("sublang1"),selfAddon.getSetting("sublang2"))
                 except:
-                    print '#error searching subtitles'
+                    print('#error searching subtitles')
                     legendas = None
                     pass
                 if legendas!=None: xbmcPlayer.setSubtitles(legendas)
@@ -805,12 +801,12 @@ def comecarvideo(name,url,playterm,legendas=None):
         while xbmcPlayer.playing:
             xbmc.sleep(5000)
             xbmcPlayer.track_time()
-    if playterm=='playlist': xbmc.executebuiltin("XBMC.Notification("+sitename+","+traducao(40039)+",'500000',"+iconpequeno.encode('utf-8')+")")
+    if playterm=='playlist': xbmc.executebuiltin("XBMC.Notification("+sitename+","+traducao(40039)+",'500000',"+iconpequeno+")")
 
 def limparplaylist():
         playlist = xbmc.PlayList(1)
         playlist.clear()
-        xbmc.executebuiltin("XBMC.Notification(Chomiteca,"+traducao(40048)+",'500000',"+iconpequeno.encode('utf-8')+")")
+        xbmc.executebuiltin("XBMC.Notification(Chomiteca,"+traducao(40048)+",'500000',"+iconpequeno+")")
 
 def comecarplaylist():
         playlist = xbmc.PlayList(1)
@@ -819,9 +815,9 @@ def comecarplaylist():
             xbmcPlayer.play(playlist)
 
 def legendas(moviefileid,url):
-    url=url.replace(','+moviefileid,'').replace('.mkv','.srt').replace('.mp4','.srt').replace('.avi','.srt').replace('.wmv','.srt')[:-7]
+    url=url.replace(','+moviefileid,'').replace('.mkv','.srt').replace('.mp4','.srt').replace('.m4v','.srt').replace('.ogm','.srt').replace('.avi','.srt').replace('.wmv','.srt')[:-7]
     try:
-        if(urllib2.urlopen(url).getcode() == 200): legendas=analyzer(url,subtitles='sim')
+        if(urllib.request.urlopen(url).getcode() == 200): legendas=analyzer(url,subtitles='sim')
     except Exception:
         legendas=url
     return legendas
@@ -840,8 +836,6 @@ def add_to_library_batch(updatelibrary=True):
     if updatelibrary: xbmc.executebuiltin("XBMC.UpdateLibrary(video)")
 
 def ReplaceSpecialChar(name):
-    try: name = name.encode('utf-8')
-    except: pass
     return name.replace('/','-')
 
 def ReplaceSpecialCharExtra(name):
@@ -907,7 +901,7 @@ def add_to_library(name,url,type,batch,updatelibrary=True):
         else:
             title = clean_folder(cleaned_title)
             if title=='': sys.exit(0)
-    if title <> '':
+    if title != '':
         title = re.sub('[^-a-zA-Z0-9ÁÀÃÂÄÉÈÊËÍÌÎÏÓÒÕÔÖÚÙÛÜÇÑáàãâäéèêëíìîïóòõôöúùûüçñ&$,.\'()\\\/ ]+', ' ', ReplaceSpecialChar(title))
         title = re.sub(' +$', '', title)
         title = re.sub('\.$', '', title)
@@ -922,7 +916,7 @@ def add_to_library(name,url,type,batch,updatelibrary=True):
     elif type == 'tvshow':
         tvshow = clean_folder(tvshow)
         tvshow = re.sub('\.$', '', tvshow)
-        if tvshow <> '':
+        if tvshow != '':
             file_folder1 = os.path.join(tvshowFolder,tvshow)
             if not xbmcvfs.exists(file_folder1): tryFTPfolder(file_folder1)
             if(selfAddon.getSetting('tvshowlibrary-enable') == 'true'):
@@ -942,7 +936,7 @@ def add_to_library(name,url,type,batch,updatelibrary=True):
         else:
             if title == '': title = cleaned_title
             tvshow,season,episode = GetTVShowNameResolved(title)
-            if tvshow <> '':
+            if tvshow != '':
                 file_folder1 = os.path.join(tvshowFolder,tvshow)
                 if not xbmcvfs.exists(file_folder1): tryFTPfolder(file_folder1)
                 file_folder = os.path.join(tvshowFolder,title+'/','S'+season)
@@ -950,9 +944,9 @@ def add_to_library(name,url,type,batch,updatelibrary=True):
             else: file_folder = os.path.join(tvshowFolder,title)
     elif type == 'musicvideo': file_folder = musicvideoFolder
     if not xbmcvfs.exists(file_folder): tryFTPfolder(file_folder)
-    strm_contents = 'plugin://plugin.video.chomiteca/?url=' + url +'&mode=25&name=' + urllib.quote_plus(title)
-    if type == 'movie': savefile(clean_url(clean_title(urllib.quote_plus(title)))+'.strm',strm_contents,file_folder)
-    if type == 'tvshow': savefile((urllib.unquote_plus(title))+'.strm',strm_contents,file_folder)
+    strm_contents = 'plugin://plugin.video.chomiteca/?url=' + url +'&mode=25&name=' + urllib.parse.quote_plus(title)
+    if type == 'movie': savefile(clean_url(clean_title(urllib.parse.quote_plus(title)))+'.strm',strm_contents,file_folder)
+    if type == 'tvshow': savefile((urllib.parse.unquote_plus(title))+'.strm',strm_contents,file_folder)
     if updatelibrary: xbmc.executebuiltin("XBMC.UpdateLibrary(video)")
 
 def tryFTPfolder(file_folder):
@@ -964,7 +958,7 @@ def tryFTPfolder(file_folder):
             try: ftp.cwd(ftparg[0][4])
             except: ftp.mkd(ftparg[0][4])
             ftp.quit()
-        except: print 'Nao conseguiu criar %s' % file_folder
+        except: print(f'Nao conseguiu criar {file_folder}')
     else: xbmcvfs.mkdir(file_folder)
 
 def GetTVShowNameResolved(title):
@@ -994,19 +988,21 @@ def play_from_outside(name,url):
 
 ################################################## PASTAS ################################################################
 def addLink(name,url,iconimage):
-      liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
+      liz = xbmcgui.ListItem(name)
+      liz.setArt({"icon": "DefaultImage.png", "thumb": iconimage})
       liz.setInfo( type="Video", infoLabels={ "Title": name } )
       liz.setProperty('fanart_image', "%s/fanart.jpg"%selfAddon.getAddonInfo("path"))
       return xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
 
 def addDir(name,url,mode,iconimage,total,pasta,atalhos=False):
       contexto=[]
-      u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
-      liz=xbmcgui.ListItem(name,iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-      contexto.append((traducao(40047), 'XBMC.RunPlugin(%s?mode=14&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),name)))
-      contexto.append((traducao(40056), 'RunPlugin(%s?mode=17&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),name)))
-      if atalhos==False:contexto.append((traducao(40055), 'RunPlugin(%s?mode=20&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),name)))
-      else:contexto.append((traducao(40065), 'RunPlugin(%s?mode=21&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),atalhos)))
+      u=sys.argv[0]+"?url="+urllib.parse.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.parse.quote_plus(name)
+      liz = xbmcgui.ListItem(name)
+      liz.setArt({"icon": "DefaultImage.png", "thumb": iconimage})
+      contexto.append((traducao(40047), 'XBMC.RunPlugin(%s?mode=14&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name)))
+      contexto.append((traducao(40056), 'RunPlugin(%s?mode=17&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),name)))
+      if atalhos==False:contexto.append((traducao(40055), 'RunPlugin(%s?mode=20&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),name)))
+      else:contexto.append((traducao(40065), 'RunPlugin(%s?mode=21&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),atalhos)))
       liz.setInfo( type="Video", infoLabels={ "Title": name} )
       liz.setProperty('fanart_image', "%s/fanart.jpg"%selfAddon.getAddonInfo("path"))
       liz.addContextMenuItems(contexto, replaceItems=False)
@@ -1016,18 +1012,19 @@ def addCont(name,url,mode,tamanho,iconimage,total,pasta=False,atalhos=False):
     contexto=[]
     try: name = name.encode('ascii', 'xmlcharrefreplace')
     except: pass
-    u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)+"&tamanhof="+urllib.quote_plus(tamanho)
-    liz=xbmcgui.ListItem(name,iconImage="DefaultFolder.png", thumbnailImage=iconimage)
-    contexto.append((traducao(40038), 'XBMC.RunPlugin(%s?mode=10&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),name)))
-    contexto.append((traducao(40050), 'XBMC.RunPlugin(%s?mode=15&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),name)))
-    contexto.append((traducao(40046), 'XBMC.RunPlugin(%s?mode=13&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),name)))
-    contexto.append((traducao(40047), 'XBMC.RunPlugin(%s?mode=14&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),name)))
-    contexto.append((traducao(40051), 'XBMC.RunPlugin(%s?mode=26&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),urllib.quote_plus(name))))
-    contexto.append((traducao(40051)+' - Batch', 'XBMC.RunPlugin(%s?mode=30&url=%s&name=%s)' % (sys.argv[0], urllib.quote_plus(url),urllib.quote_plus(name))))
-    contexto.append((traducao(40056), 'RunPlugin(%s?mode=17&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),name)))
-    if atalhos==False: contexto.append((traducao(40055), 'RunPlugin(%s?mode=19&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),name)))
-    else: contexto.append((traducao(40065), 'RunPlugin(%s?mode=21&url=%s&name=%s)' % (sys.argv[0],urllib.quote_plus(url),atalhos)))
-    contexto.append((traducao(40040), 'XBMC.RunPlugin(%s?mode=11&url=%s&name=%s&tamanhof=%s)' % (sys.argv[0], urllib.quote_plus(url),name,tamanho)))
+    u=sys.argv[0]+"?url="+urllib.parse.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.parse.quote_plus(name)+"&tamanhof="+urllib.parse.quote_plus(tamanho)
+    liz = xbmcgui.ListItem(name)
+    liz.setArt({"icon": "DefaultImage.png", "thumb": iconimage})
+    contexto.append((traducao(40038), 'XBMC.RunPlugin(%s?mode=10&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name)))
+    contexto.append((traducao(40050), 'XBMC.RunPlugin(%s?mode=15&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name)))
+    contexto.append((traducao(40046), 'XBMC.RunPlugin(%s?mode=13&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name)))
+    contexto.append((traducao(40047), 'XBMC.RunPlugin(%s?mode=14&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name)))
+    contexto.append((traducao(40051), 'XBMC.RunPlugin(%s?mode=26&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),urllib.parse.quote_plus(name))))
+    contexto.append((traducao(40051)+' - Batch', 'XBMC.RunPlugin(%s?mode=30&url=%s&name=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),urllib.parse.quote_plus(name))))
+    contexto.append((traducao(40056), 'RunPlugin(%s?mode=17&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),name)))
+    if atalhos==False: contexto.append((traducao(40055), 'RunPlugin(%s?mode=19&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),name)))
+    else: contexto.append((traducao(40065), 'RunPlugin(%s?mode=21&url=%s&name=%s)' % (sys.argv[0],urllib.parse.quote_plus(url),atalhos)))
+    contexto.append((traducao(40040), 'XBMC.RunPlugin(%s?mode=11&url=%s&name=%s&tamanhof=%s)' % (sys.argv[0], urllib.parse.quote_plus(url),name,tamanho)))
     liz.setInfo( type="Video", infoLabels={ "Title": name} )
     liz.setProperty('fanart_image', "%s/fanart.jpg"%selfAddon.getAddonInfo("path"))
     liz.addContextMenuItems(contexto, replaceItems=True)
@@ -1046,7 +1043,7 @@ def fazerdownload(name,url,tipo="outros"):
             if os.path.exists(downloadPath): mypath=os.path.join(downloadPath,vidname)
             else: return
       if os.path.isfile(mypath) is True:
-            ok = mensagemok('Chomiteca',traducao(40042),'','')
+            ok = mensagemok('Chomiteca',traducao(40042),'')
             return False
       else:
             from resources.lib import downloader
@@ -1092,7 +1089,7 @@ def caixadetexto(url,ftype=''):
     if (keyb.isConfirmed()):
         search = keyb.getText()
         if search=='': sys.exit(0)
-        encode=urllib.quote_plus(search)
+        encode=urllib.parse.quote_plus(search)
         if save==True: selfAddon.setSetting('ultima-pesquisa', search)
         if url=='pastas': pastas(MainURL + search,name)
         elif url=='password': return search
@@ -1103,9 +1100,9 @@ def caixadetexto(url,ftype=''):
     else: sys.exit(0)
 
 def abrir_url(url):
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     req.add_header('User-Agent', user_agent)
-    response = urllib2.urlopen(req)
+    response = urllib.request.urlopen(req)
     link=response.read()
     response.close()
     return link
@@ -1116,7 +1113,7 @@ def savefile(filename, contents,pastafinal=pastaperfil):
         fh = xbmcvfs.File(destination, 'w')
         fh.write(str(contents))
         fh.close()
-    except: print "Não gravou os temporários de: %s | %s" % (filename,destination)
+    except: print(f"Não gravou os temporários de: {filename} | {destination}")
 
 def openfile(filename,pastafinal=pastaperfil):
     try:
@@ -1127,26 +1124,26 @@ def openfile(filename,pastafinal=pastaperfil):
         return contents
     except:
         traceback.print_exc()
-        print "Não abriu conteúdos de: %s" % filename
+        print(f"Não abriu conteúdos de: {filename}")
         return None
 
 def abrir_url_cookie(url,erro=True):
     net.set_cookies(cookies)
     try:
         if ReturnStatus('chomikuj'): ref_data = {'Host': 'chomikuj.pl', 'Connection': 'keep-alive', 'Referer': 'https://chomikuj.pl','Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8','User-Agent':user_agent,'Referer': 'https://chomikuj.pl'}
-        link=net.http_POST(url,ref_data).content.encode('utf-8','ignore')
+        link=net.http_POST(url,ref_data).content
         return link
-    except urllib2.HTTPError, e:
-        if erro==True: mensagemok('Chomiteca',str(urllib2.HTTPError(e.url, e.code, traducao(40032), e.hdrs, e.fp)),traducao(40033))
+    except urllib.error.HTTPError as e:
+        if erro==True: mensagemok('Chomiteca',str(urllib.error.HTTPError(e.url, e.code, traducao(40032), e.hdrs, e.fp)) + traducao(40033))
         sys.exit(0)
-    except urllib2.URLError, e:
+    except urllib.error.URLError as e:
         if erro==True: mensagemok('Chomiteca',traducao(40032)+traducao(40033))
         sys.exit(0)
 
 def redirect(url):
-    req = urllib2.Request(url)
+    req = urllib.request.Request(url)
     req.add_header('User-Agent', user_agent)
-    response = urllib2.urlopen(req)
+    response = urllib.request.urlopen(req)
     gurl=response.geturl()
     return gurl
 
@@ -1167,15 +1164,15 @@ def get_params():
 
 def clean(text):
     command={'\r':'','\n':'','\t':'','&nbsp;':' ','&quot;':'"','&amp;':'&','&ntilde;':'ñ','&#35;':'#','&#39;':'\'','&#40;':'(','&#41;':')','&#44;':',','&#46;':'.','&#164;':'ñ','&#165;':'Ñ','&#170;':'ª','&#178;':'²','&#179;':'³','&#192;':'À','&#193;':'Á','&#194;':'Â','&#195;':'Ã','&#199;':'Ç','&#201;':'É','&#202;':'Ê','&#205;':'Í','&#211;':'Ó','&#212;':'Ô','&#213;':'Õ','&#217;':'Ù','&#218;':'Ú','&#224;':'à','&#225;':'á','&#226;':'â','&#227;':'ã','&#231;':'ç','&#232;':'è','&#233;':'é','&#234;':'ê','&#237;':'í','&#243;':'ó','&#244;':'ô','&#245;':'õ','&#249;':'ù','&#250;':'ú'}
-    regex = re.compile("|".join(map(re.escape, command.keys())))
+    regex = re.compile("|".join(map(re.escape, list(command.keys()))))
     return regex.sub(lambda mo: command[mo.group(0)], text)
 
 def traducao(texto):
-    return traducaoma(texto).encode('utf-8')
+    return traducaoma(texto)
 
 def test(pesquisa):
     login(True)
-    encode=urllib.quote_plus(pesquisa)
+    encode=urllib.parse.quote_plus(pesquisa)
     form_d = {'FileName':encode,'submitSearchFiles':'Buscar','FileType':'video','IsGallery':'False'}
     return pastas(MainURL + 'action/SearchFiles',name,formcont=form_d,past=True,deFora=True,listagem=True)
 
@@ -1185,23 +1182,23 @@ name=None
 mode=None
 tamanhoparavariavel=None
 
-try: url=urllib.unquote_plus(params["url"])
+try: url=urllib.parse.unquote_plus(params["url"])
 except: pass
-try: tamanhoparavariavel=urllib.unquote_plus(params["tamanhof"])
+try: tamanhoparavariavel=urllib.parse.unquote_plus(params["tamanhof"])
 except: pass
-try: name=urllib.unquote_plus(params["name"])
+try: name=urllib.parse.unquote_plus(params["name"])
 except: pass
 try: mode=int(params["mode"])
 except: pass
 
-print "Mode: "+str(mode)
-print "URL: "+str(url)
-print "Name: "+str(name)
-print "Name: "+str(tamanhoparavariavel)
+print("Mode: "+str(mode))
+print("URL: "+str(url))
+print("Name: "+str(name))
+print("Size: "+str(tamanhoparavariavel))
 
 if mode==None or url==None or len(url)<1:
     if (selfAddon.getSetting('chomikuj-enable') == 'false'):
-        ok = mensagemok('Chomiteca','Precisa de configurar a conta do Chomikuj','para aceder aos conteúdos.')
+        ok = mensagemok('Chomiteca','Precisa de configurar a conta do Chomikuj para aceder aos conteúdos.')
         entrarnovamente(1)
     else:
         if (selfAddon.getSetting('chomikuj-enable') == 'true' and not selfAddon.getSetting('chomikuj-username')== '') : login()

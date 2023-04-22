@@ -1,18 +1,18 @@
-Versão 2.1.1 - 19/03/2017
-> Actualização XML
+VersÃ£o 2.1.1 - 19/03/2017
+> ActualizaÃ§Ã£o XML
 
-Versão 2.1.0 - 13/03/2017
-> Possibilidade de abrir as imagens está novamente funcional
+VersÃ£o 2.1.0 - 13/03/2017
+> Possibilidade de abrir as imagens estÃ£o novamente funcional
 > (Agradecimentos ao M. Machado)
 
-Versão 2.0.0 - 13/03/2017
-> Actualização para Sapo24
+VersÃ£o 2.0.0 - 13/03/2017
+> ActualizaÃ§Ã£o para Sapo24
 
-Versão 1.0.3 - 04/12/2014
-> Correcções
+VersÃ£o 1.0.3 - 04/12/2014
+> CorreÃ§Ãµes
 
-Versão 1.0.1 - 23/12/2013
-> Correcções para voltar a funcionar
+VersÃ£o 1.0.1 - 23/12/2013
+> CorreÃ§Ãµes para voltar a funcionar
 
-Versão 1.0.0 - 22/03/2013
-> Primeira versão do addon
+VersÃ£o 1.0.0 - 22/03/2013
+> Primeira VersÃ£o do addon

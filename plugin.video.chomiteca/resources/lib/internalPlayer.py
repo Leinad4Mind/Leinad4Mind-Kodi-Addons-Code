@@ -13,7 +13,7 @@ track = selfAddon.getSetting('track-player')
 class Player(xbmc.Player):
 	def __init__(self,title,dbid,content):
 		xbmc.Player.__init__(self)
-		print "Title: "+str(title)
+		print(f"Title: {str(title)}")
 		self.dbid = dbid
 		self.content = content
 
@@ -31,26 +31,26 @@ class Player(xbmc.Player):
 			else: self.filemedia = None
 
 	def onPlayBackStarted(self):
-		print "Content: "+str(self.content) 
-		print "DBID: "+str(self.dbid)
+		print(f"Content: {str(self.content) }")
+		print(f"DBID: {str(self.dbid)}")
 		try:
 			self.totalTime = self.getTotalTime()
-			print 'total time',self.totalTime
+			print(f'total time {self.totalTime}')
 			if track == 'true' and self.isPlayingVideo():
 				if xbmcvfs.exists(self.filemedia):
-					print "Resume point available..."
+					print("Resume point available...")
 					tracker=readfile(self.filemedia)
 					opcao=xbmcgui.Dialog().yesno("Chomiteca", 'Resume point available.','Continue from '+ ' %s?' % (format_time(float(tracker))),'', 'No', 'Yes')
 					if opcao: self.seekTime(float(tracker))
 		except: pass
 
 	def onPlayBackStopped(self):
-		print 'player Stop'
+		print('player Stop')
 		self.playing = False
 		time = int(self.time)
 		try: self.racio = self.time/self.totalTime
 		except: self.racio = 0.50
-		print 'self.racio %s' % (self.racio)
+		print(f'self.racio {self.racio}')
 		if self.racio > 0.90:
 			self.onPlayBackEnded()
 			if track == 'true' and self.isPlayingVideo():
@@ -62,15 +62,15 @@ class Player(xbmc.Player):
 
 	def onPlayBackEnded(self):
 		if str(self.content) == 'TV':
-			print "Marking Episode as watched"
+			print("Marking Episode as watched")
 			xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.SetEpisodeDetails", "params": {"episodeid" : %s, "playcount" : 1 }, "id": 1 }' % str(self.dbid))
 		elif str(self.content) == 'Movie':
-			print "Marking Movie as watched"
+			print("Marking Movie as watched")
 			xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.SetMovieDetails", "params": {"movieid" : %s, "playcount" : 1 }, "id": 1 }' % str(self.dbid))
 		xbmc.executebuiltin('Container.Refresh')
 		try: self.racio = self.time/self.totalTime
 		except: self.racio = 0.50
-		print 'self.racio %s' % (self.racio)
+		print(f'self.racio {self.racio}')
 		if self.racio > 0.90:
 			if track == 'true': # and self.isPlayingVideo():
 				try: xbmcvfs.delete(self.filemedia)
@@ -88,18 +88,18 @@ def save(filename, contents):
 		fh = xbmcvfs.File(filename, 'w')
 		fh.write(str(contents))
 		fh.close()
-	except: print "Não gravou os temporários de: %s" % (filename)
+	except: print(f"Não gravou os temporários de: {filename}")
 
 def readfile(filename):
     try:
-		fh = xbmcvfs.File(filename)
-		string = fh.read()
-		fh.close()
-		return string
+	    fh = xbmcvfs.File(filename)
+	    string = fh.read()
+	    fh.close()
+	    return string
     except:
-		traceback.print_exc()
-		print "Não abriu conteúdos de: %s" % filename
-		return None
+	    traceback.print_exc()
+	    print(f"Não abriu conteúdos de: {filename}")
+	    return None
 
 def format_time(seconds):
     minutes,seconds = divmod(seconds, 60)

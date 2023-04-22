@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import urllib,urllib2,re,xbmcplugin,xbmcgui,xbmc,xbmcaddon,os,json
+import urllib.request, urllib.parse, urllib.error,urllib.request,urllib.error,urllib.parse,re,xbmcplugin,xbmcgui,xbmc,xbmcaddon,os,json
 
 addon_id = 'plugin.video.cinecartaz'
 selfAddon = xbmcaddon.Addon(id=addon_id)
@@ -44,13 +44,14 @@ def list_trailers(url):
 			thumb = thumb.replace('&amp;w=140&amp;h=190&amp;act=cropResize','')
 			if ( setting('desempenho-enable') == 'true' ): addDir(title,mainURL+url.replace('/Filme/','/Trailer/'),3,thumb,False,counttrailers)
 			else: addDir(title,mainURL+url.replace('/Filme/','/Trailer/'),3,thumb,False,counttrailers,searchmovie(mainURL+url.replace('/Trailer/','/Filme/'),thumb))
+
 	xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 	if "confluence" in xbmc.getSkinDir(): xbmc.executebuiltin('Container.SetViewMode(500)')
 
-def list_estreias_total(url):
-	estreias = open_url(url)
+def list_premieres_total(url):
+	premieres = open_url(url)
 	searchstring = '<h2 class="boxtitle first"><span>(.+?)</span></h2>(.+?)</ul>'
-	section = re.compile(searchstring, re.DOTALL).findall(estreias)
+	section = re.compile(searchstring, re.DOTALL).findall(premieres)
 	for s, s2 in section:
 		addDir(s.replace("Estreias da semana de ",""),'',6,os.path.join(artfolder,'estreias.png'),True,1)
 		trailer = re.compile('<a href="(.+?)" title="(.+?)" class=".+?">\s+<img src="(.+?)" width="\d+" height="\d+" alt=".+?" />', re.DOTALL).findall(s2)
@@ -62,18 +63,18 @@ def list_estreias_total(url):
 	xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 	if "confluence" in xbmc.getSkinDir(): xbmc.executebuiltin('Container.SetViewMode(500)')
 
-def list_estreias(url):
-	estreias = open_url(url)
-	section = re.compile('<h2 class="boxtitle first"><span>(.+?)</span></h2>', re.DOTALL).findall(estreias)
+def list_premieres(url):
+	premieres = open_url(url)
+	section = re.compile('<h2 class="boxtitle first"><span>(.+?)</span></h2>', re.DOTALL).findall(premieres)
 	for s in section:
 		addDir(s,url,6,'',True,1)
 	xbmcplugin.setContent(int(sys.argv[1]), 'movies')
 	#if "confluence" in xbmc.getSkinDir(): xbmc.executebuiltin('Container.SetViewMode(500)')
 
-def list_estreias2(name,url):
-	estreias = open_url(url)
+def list_premieres2(name,url):
+	premieres = open_url(url)
 	searchstring = '<h2 class="boxtitle first"><span>%s</span></h2>(.+?)</ul>' % name
-	section = re.compile(searchstring, re.DOTALL).findall(estreias)
+	section = re.compile(searchstring, re.DOTALL).findall(premieres)
 	for s in section:
 		trailer = re.compile('<a href="(.+?)" title="(.+?)" class=".+?">\s+<img src="(.+?)" width="\d+" height="\d+" alt=".+?" />', re.DOTALL).findall(s)
 		counttrailers = len(trailer)
@@ -158,7 +159,7 @@ def searchmovie(url,thumb):
 	except: director = ''
 	try:
 		if 'static.publico.pt' in thumb:
-				jsonpage = open_url('http://www.omdbapi.com/?plot=short&r=json&t='+urllib.quote_plus(originaltitle))
+				jsonpage = open_url(f'http://www.omdbapi.com/?plot=short&apikey=ffeb3c91&r=json&t='+urllib.parse.quote_plus(originaltitle))
 				jdef = json.loads(jsonpage)
 				thumb = jdef['Poster']
 	except: pass
@@ -179,31 +180,33 @@ def searchmovie(url,thumb):
 	return info
 	
 def open_url(url):
-	req = urllib2.Request(url)
+	req = urllib.request.Request(url)
 	req.add_header('User-Agent', 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3')
-	response = urllib2.urlopen(req)
+	response = urllib.request.urlopen(req)
 	link=response.read()
 	response.close()
-	return link
+	return link.decode('utf-8')
 
 def addLink(name,url,iconimage,plot='',fromSection=None):
 	ok=True
-	liz=xbmcgui.ListItem(name, iconImage="DefaultVideo.png", thumbnailImage=iconimage)
+	liz = xbmcgui.ListItem(name)
+	liz.setArt({"icon": "DefaultImage.png", "thumb": iconimage})
 	liz.setProperty('fanart_image', fanart)
 	liz.setInfo( type="Video", infoLabels={ "Title": name, "plot": plot } )
 	ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=url,listitem=liz)
 	return ok
 
 def addDir(name,url,mode,iconimage,pasta=True,total=1,info=None):
-	u=sys.argv[0]+"?url="+urllib.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.quote_plus(name)
+	u=sys.argv[0]+"?url="+urllib.parse.quote_plus(url)+"&mode="+str(mode)+"&name="+urllib.parse.quote_plus(name)
 	ok=True
-	if info <> '':
+	if info != '':
 		if 'static.publico.pt' in iconimage: 
 			try: iconimage= re.compile("'poster': u'(.+?)',", re.DOTALL).findall(str(info))[0]
 			except: pass
-	liz=xbmcgui.ListItem(name, iconImage="DefaultFolder.png", thumbnailImage=iconimage)
+	liz = xbmcgui.ListItem(name)
+	liz.setArt({"icon": "DefaultImage.png", "thumb": iconimage})
 	liz.setProperty('fanart_image', fanart)
-	if info <> '': liz.setInfo( type="Video", infoLabels=info )
+	if info != '': liz.setInfo( type="Video", infoLabels=info )
 	ok=xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]),url=u,listitem=liz,isFolder=pasta,totalItems=total)
 	return ok
 	
@@ -228,25 +231,25 @@ name=None
 mode=None
 iconimage=None
 
-try: url=urllib.unquote_plus(params["url"])
+try: url=urllib.parse.unquote_plus(params["url"])
 except: pass
-try: name=urllib.unquote_plus(params["name"])
+try: name=urllib.parse.unquote_plus(params["name"])
 except: pass
 try: mode=int(params["mode"])
 except: pass
-try: iconimage=urllib.unquote_plus(params["iconimage"])
+try: iconimage=urllib.parse.unquote_plus(params["iconimage"])
 except: pass
 
-print "Mode: "+str(mode)
-print "URL: "+str(url)
-print "Name: "+str(name)
-print "Iconimage: "+str(iconimage)
+print(f"Mode: {mode}")
+print(f"URL: {url}")
+print(f"Name: {name}")
+print(f"Iconimage: {iconimage}")
 
 if mode==None or url==None or len(url)<1: CATEGORIES()
 elif mode==1: list_trailers(url)
 elif mode==3: play_trailer(url)
 elif mode==4: play(url)
-elif mode==5: list_estreias(url)
-elif mode==6: list_estreias2(name,url)
-elif mode==7: list_estreias_total(url)
+elif mode==5: list_premieres(url)
+elif mode==6: list_premieres2(name,url)
+elif mode==7: list_premieres_total(url)
 xbmcplugin.endOfDirectory(int(sys.argv[1]))

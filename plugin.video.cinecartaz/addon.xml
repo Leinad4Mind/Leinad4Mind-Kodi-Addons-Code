@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="plugin.video.cinecartaz" 
        name="Cinecartaz"
-       version="1.0.2"
+       version="2.0.0"
        provider-name="Mafarricos/Leinad4Mind">
     <requires>
-    <import addon="xbmc.python" version="2.14.0"/>
+    <import addon="xbmc.python" version="3.0.0"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="main.py">
     <provides>video</provides>
@@ -17,6 +17,14 @@
     <description lang="pt_PT">Ver trailers e informações do site cinecartaz.publico.pt</description>
     <description lang="pt_BR">Ver trailers e informações do site português cinecartaz.publico.pt</description>
     <description lang="en">See trailers and informations from the portuguese website cinecartaz.publico.pt</description>
-    <platform>all</platform>
+    <license>GPL 3.0</license>
+    <assets>
+      <icon>icon.png</icon>
+      <fanart>fanart.jpg</fanart>
+    </assets>
+    <news>
+      v2.0.0 released Abr 01, 2021:
+      - Kodi 19 Compatibility
+    </news>
   </extension>
 </addon>
