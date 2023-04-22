@@ -539,7 +539,7 @@ def criarplaylist(url,name):
     xbmcPlayer.play(playlist)
 
 def trailer(name):
-    youtube_trailer_search = 'https://www.googleapis.com/youtube/v3/search?part=id,snippet&q=%s-Trailer&maxResults=1&key=AIzaSyCgpWUrGw2mySqmxxzlrsUoNhpGCBVJD7s'
+    youtube_trailer_search = 'https://www.googleapis.com/youtube/v3/search?part=id,snippet&q=%s-Trailer&maxResults=1&key=ADD_KEY_HERE'
     cleanname=re.compile('COLOR .+?\](.+?)\[/COLOR').findall(name)
     if cleanname: name = cleanname[0][:-4]
     ytpage = abrir_url(youtube_trailer_search % (urllib.parse.quote_plus(name)))
